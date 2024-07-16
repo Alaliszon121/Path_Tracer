@@ -3,6 +3,9 @@ Simple path tracer made by me in C++ using http://nothings.org/stb/ to write out
 
 <img src="https://github.com/user-attachments/assets/2bd89bf9-f5e5-4fe6-89c8-c0131cf714b5" width="200" height="200" />
 
+###Roadmap:
+<img src="https://github.com/user-attachments/assets/82ed804d-c49c-4e5e-b98c-8a6fcc32c2d7" width="300" height="350" />
+
  ## Spis Treści
 1. [Wektory i Operacje na Wektorach](#wektory-i-operacje-na-wektorach)
 2. [Intersekcja Promienia z Obiektem Sferycznym](#intersekcja-promienia-z-obiektem-sferycznym)

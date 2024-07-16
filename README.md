@@ -5,7 +5,7 @@ Simple path tracer made by me in C++ using http://nothings.org/stb/ to write out
 
 ### Roadmap:
 
-<img src="https://github.com/user-attachments/assets/82ed804d-c49c-4e5e-b98c-8a6fcc32c2d7" width="300" height="350" />
+<img src="https://github.com/user-attachments/assets/82ed804d-c49c-4e5e-b98c-8a6fcc32c2d7" width="600" height="700" />
 
  ## Spis Treści
 1. [Wektory i Operacje na Wektorach](#wektory-i-operacje-na-wektorach)

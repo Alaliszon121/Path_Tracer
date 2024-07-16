@@ -1,5 +1,7 @@
 # Path Tracer
 Simple path tracer made by me in c++ using http://nothings.org/stb/ to write out PNG image
+![jakis](https://github.com/user-attachments/assets/2bd89bf9-f5e5-4fe6-89c8-c0131cf714b5)
+
  ## Spis Treści
 1. [Wektory i Operacje na Wektorach](#wektory-i-operacje-na-wektorach)
 2. [Intersekcja Promienia z Obiektem Sferycznym](#intersekcja-promienia-z-obiektem-sferycznym)

@@ -1,5 +1,5 @@
 # Path Tracer
-Simple path tracer made by me in C++ using http://nothings.org/stb/ to write out PNG image
+Program renderujący obraz 3D z użyciem prostego path tracingu C++ przy użyciu biblioteki stb_image_write - v1.16 http://nothings.org/stb/
 
 <img src="https://github.com/user-attachments/assets/2bd89bf9-f5e5-4fe6-89c8-c0131cf714b5" width="200" height="200" />
 
@@ -8,16 +8,33 @@ Simple path tracer made by me in C++ using http://nothings.org/stb/ to write out
 <img src="https://github.com/user-attachments/assets/82ed804d-c49c-4e5e-b98c-8a6fcc32c2d7" width="600" height="700" />
 
  ## Spis Treści
-1. [Wektory i Operacje na Wektorach](#wektory-i-operacje-na-wektorach)
-2. [Intersekcja Promienia z Obiektem Sferycznym](#intersekcja-promienia-z-obiektem-sferycznym)
-3. [Intersekcja Promienia z Płaszczyzną](#intersekcja-promienia-z-płaszczyzną)
-4. [Refleksja Promienia na Powierzchni](#refleksja-promienia-na-powierzchni)
-5. [Generowanie Liczb Losowych](#generowanie-liczb-losowych)
-6. [Metoda Śledzenia Promieni](#metoda-śledzenia-promieni)
-7. [Funkcja Renderująca Obraz](#funkcja-renderująca-obraz)
-8. [Wielowątkowość](#wielowątkowość)
-9. [Porównywanie Intersekcji i Ustawianie Danych Wynikowych](#porównywanie-intersekcji-i-ustawianie-danych-wynikowych)
-10. [Saturacja](#saturacja)
+- [Path Tracer](#path-tracer)
+    - [Roadmap:](#roadmap)
+  - [Spis Treści](#spis-treści)
+  - [Wektory i Operacje na Wektorach](#wektory-i-operacje-na-wektorach)
+    - [Struktura `Vec3`](#struktura-vec3)
+    - [Operacje na Wektorach](#operacje-na-wektorach)
+  - [Intersekcja Promienia z Obiektem Sferycznym](#intersekcja-promienia-z-obiektem-sferycznym)
+    - [Struktura `Sphere`](#struktura-sphere)
+    - [Funkcja `intersect`](#funkcja-intersect)
+  - [Intersekcja Promienia z Płaszczyzną](#intersekcja-promienia-z-płaszczyzną)
+    - [Struktura `Plane`](#struktura-plane)
+    - [Funkcja `intersectPlane`](#funkcja-intersectplane)
+  - [Refleksja Promienia na Powierzchni](#refleksja-promienia-na-powierzchni)
+    - [Funkcja `reflect`](#funkcja-reflect)
+  - [Generowanie Liczb Losowych](#generowanie-liczb-losowych)
+    - [Funkcja `randFloat`](#funkcja-randfloat)
+    - [Funkcja `randVectorInSphere`](#funkcja-randvectorinsphere)
+  - [Metoda Śledzenia Promieni](#metoda-śledzenia-promieni)
+    - [Funkcja `pathTracing`](#funkcja-pathtracing)
+  - [Funkcja Renderująca Obraz](#funkcja-renderująca-obraz)
+    - [Funkcja `render`](#funkcja-render)
+  - [Wielowątkowość](#wielowątkowość)
+    - [Użycie Wątków](#użycie-wątków)
+  - [Porównywanie Intersekcji i Ustawianie Danych Wynikowych](#porównywanie-intersekcji-i-ustawianie-danych-wynikowych)
+    - [Funkcja `intersectCompareAndSet`](#funkcja-intersectcompareandset)
+  - [Saturacja](#saturacja)
+    - [Funkcja `saturate`](#funkcja-saturate)
 
 ## Wektory i Operacje na Wektorach
 

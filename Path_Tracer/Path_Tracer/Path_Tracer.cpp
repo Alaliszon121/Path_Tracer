@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <string.h>
 #include <conio.h> 
 
@@ -19,6 +19,7 @@ std::mutex console_mutex;
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define _CRT_SECURE_NO_WARNINGS
 #define __STDC_LIB_EXT1__
+
 // zewnetrzna biblioteka do zapisywania wyrenderowanego obrazu do pliku
 #include "png.h"
 
@@ -61,14 +62,30 @@ int main(int argc, const char* argv[])
 	printf("Program rozpoczal dzialanie na %i watkach...\n", num_threads);
 
 	void* image = malloc(image_size); // alokowanie bloku pamieci dla obrazu
-	memset(image, 0, image_size); // wypelnia zaalokowana pami�c (wielkosci image_size) bloku wskazywanego przez image na 0  
+	memset(image, 0, image_size); // wypelnia zaalokowana pamięc (wielkosci image_size) bloku wskazywanego przez image na 0  
 
-	// ustawienia sceny, dodanie obiektow na scene 3D
-	Scene scene = {};
-	scene.s1 = { {-2.0f, 0.0f, 0.0f}, 1.0f, {1.0f, 0.5f, 0.8f}, 0.04f };
-	scene.s2 = { {0.0f, 0.0f, 0.0f}, 1.0f, {0.6f, 0.9f, 0.6f}, 0.3f };
-	scene.s3 = { {2.0f, 0.0f, 0.0f}, 1.0f, {0.8f, 0.4f, 0.8f}, 0.9f };
-	scene.p1 = { {0.0f, 1.0f, 0.0f}, -1.0f, {0.8f, 0.8f, 0.8f}, 0.9f };
+	// Initialize scene with OOP style
+	Scene scene;
+
+	// Add plane
+	scene.add_plane(
+		Vec3_simd(0.0f, 1.0f, 0.0f),    // normal (will be auto-normalized)
+		-1.0f,                          // distance
+		Vec3_simd(0.8f, 0.8f, 0.8f),    // color
+		0.9f                            // roughness
+	);
+
+	// Add spheres (converting Vec3 literals to Vec3_simd)
+	scene.add_sphere(
+		Vec3_simd(-2.0f, 0.0f, 0.0f),   // position
+		1.0f,                           // radius
+		Vec3_simd(1.0f, 0.5f, 0.8f),    // color
+		0.04f                           // roughness
+	);
+
+	scene.add_sphere(Vec3_simd(0.0f, 0.0f, 0.0f), 1.0f, Vec3_simd(0.6f, 0.9f, 0.6f), 0.3f);
+
+	scene.add_sphere(Vec3_simd(2.0f, 0.0f, 0.0f), 1.0f, Vec3_simd(0.8f, 0.4f, 0.8f), 0.9f);
 
 	// szerokosc i wysokosc fragmentow (kazdy watek dostaje pewna ilosc fragmentow obrazu do wyrenderowania)
 	std::atomic<uint32_t> next_tile(0);

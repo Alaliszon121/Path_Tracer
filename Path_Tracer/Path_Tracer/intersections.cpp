@@ -1,5 +1,6 @@
 #include "intersections.h"
 #include <math.h>
+#include <limits>
 
 /* 
 testowanie, czy promieñ przecina obiekty w scenie(sphere, plane), i dostarcza szczegó³owe informacje o punkcie przeciêcia
@@ -16,99 +17,57 @@ kluczowe funkcjonalnosci i ich zalety:
 		* funkcja zwraca true, jeœli promieñ trafi³ w cokolwiek w scenie, lub false, jeœli nie by³o trafienia
 */
 
-bool intersect(Ray ray, Sphere sphere, Hit& hit) //przeciêcie promienia z kul¹
-{
-	Vec3 c = sub(sphere.pos, ray.pos); // wektor od pozycji promienia do œrodka kuli
-	float d = mag(cross(ray.dir, c)); // odleg³oœæ pomiêdzy promieniem a œrodkiem kuli
-	float t1 = dot(ray.dir, c); // odleg³oœæ wzd³u¿ promienia do najbli¿szego punktu kuli
+bool Sphere::intersect(const Ray& ray, Hit& hit) const {
+    Vec3_simd c = sub(pos, ray.pos);
+    float t1 = dot(ray.dir, c);
+    float c_sq = dot(c, c);
+    float d_sq = c_sq - t1 * t1;
 
-	// sprawdzenie, czy promieñ przecina kulê
-	// jeœli odleg³oœæ miêdzy œrodkiem kuli a promieniem jest mniejsza lub równa promieniowi, to mamy trafienie!
-	if (t1 > 0.0f && d <= sphere.radius)
-	{
-		float t2 = sqrt(sphere.radius * sphere.radius - d * d); // odleg³osc od punktu najblizszego do punktu przeciecia
+    if (t1 < 0.0f || d_sq > radius * radius) {
+        return false;
+    }
 
-		hit.distance = t1 - t2; // odleg³oœæ od promienia do punktu przeciêcia
-		hit.pos = add(ray.pos, mul(ray.dir, hit.distance)); // pozycja punktu przeciêcia
-		hit.normal = norm(sub(hit.pos, sphere.pos)); // normalna w punkcie przeciêcia
-		hit.color = sphere.color; // kolor kuli
-		hit.roughness = sphere.roughness; // szorstkoœæ kuli
+    float t2 = sqrt(radius * radius - d_sq);
+    hit.distance = t1 - t2;
+    hit.pos = add(ray.pos, mul(ray.dir, hit.distance));
+    hit.normal = norm(sub(hit.pos, pos));
 
-		// odwracanie normalnej, jesli jest skierowana w tym samym kierunku co promien
-		if (dot(ray.dir, hit.normal) > 0.0f)
-		{
-			hit.normal = mul(hit.normal, -1.0f);
-		}
+    if (dot(ray.dir, hit.normal) > 0.0f) {
+        hit.normal = mul(hit.normal, -1.0f);
+    }
 
-		return true; // promieñ przecina kule
-	}
-
-	return false; // promieñ nie przecina kuli
+    hit.color = color;
+    hit.roughness = roughness;
+    return true;
 }
 
-bool intersect(Ray ray, Plane plane, Hit& hit) //przeciêcie promienia z plaszczyzna
-{
-	float denom = dot(ray.dir, plane.normal); // iloczyn skalarny: sprawdza nachylenie promienia wzglêdem p³aszczyzny
-	if (denom > 0.000001f) // jeœli denom jest bliskie zeru, oznacza to, ¿e promieñ jest równoleg³y do p³aszczyzny i nie ma przeciêcia
-	{
-		hit.distance = -(dot(ray.pos, plane.normal) + plane.distance) / denom; // odleg³oœæ do punktu przeciêcia
-		hit.pos = add(ray.pos, mul(ray.dir, hit.distance)); // pozycja punktu przeciêcia
-		hit.normal = plane.normal; // normalna p³aszczyzny
-		hit.color = plane.color; // kolor
-		hit.roughness = plane.roughness; // szorstkosc
+bool Plane::intersect(const Ray& ray, Hit& hit) const {
+    float denom = dot(normal, ray.dir);
+    if (fabs(denom) <= 1e-6f) return false;
 
-		return true; // promieñ przecina plaszczyzne
-	}
+    float dist = -(dot(ray.pos, normal) + distance) / denom;
+    if (dist < 0.0f) return false;
 
-	return false; // promieñ nie przecina plaszczyzny
+    hit.distance = dist;
+    hit.pos = add(ray.pos, mul(ray.dir, hit.distance));
+    hit.normal = normal;
+    hit.color = color;
+    hit.roughness = roughness;
+    return true;
 }
 
-bool intersect(Ray ray, Scene& scene, Hit& hit) // przeciêcie promienia z ca³¹ scen¹.
-{
-	Hit temp_hit = {};
-	float distance = 10000.0f; // pocz¹tkowo bardzo du¿a odleg³oœæ
-	bool is_hit = 0.0f;
+bool intersect(const Ray& ray, const Scene& scene, Hit& hit) {
+    Hit temp_hit;
+    float min_distance = std::numeric_limits<float>::max();
+    bool any_hit = false;
 
-	// test przeciêcia promienia z ka¿d¹ kul¹ i p³aszczyzn¹ w scenie
-	if (intersect(ray, scene.s1, temp_hit))
-	{
-		if (temp_hit.distance < distance)
-		{
-			hit = temp_hit;
-			distance = temp_hit.distance;
-			is_hit = true;
-		}
-	}
+    for (const auto& shape : scene.shapes) {
+        if (shape->intersect(ray, temp_hit) && temp_hit.distance < min_distance) {
+            hit = temp_hit;
+            min_distance = temp_hit.distance;
+            any_hit = true;
+        }
+    }
 
-	if (intersect(ray, scene.s2, temp_hit))
-	{
-		if (temp_hit.distance < distance)
-		{
-			hit = temp_hit;
-			distance = temp_hit.distance;
-			is_hit = true;
-		}
-	}
-
-	if (intersect(ray, scene.s3, temp_hit))
-	{
-		if (temp_hit.distance < distance)
-		{
-			hit = temp_hit;
-			distance = temp_hit.distance;
-			is_hit = true;
-		}
-	}
-
-	if (intersect(ray, scene.p1, temp_hit))
-	{
-		if (temp_hit.distance < distance)
-		{
-			hit = temp_hit;
-			distance = temp_hit.distance;
-			is_hit = true;
-		}
-	}
-
-	return is_hit;
+    return any_hit;
 }

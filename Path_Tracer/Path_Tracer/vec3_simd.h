@@ -1,6 +1,8 @@
 #pragma once
 
 #include <math.h>
+#include <time.h>
+#include <stdlib.h>
 #include "customVector.h"
 #include <immintrin.h> // For SIMD intrinsics
 
@@ -76,14 +78,13 @@ inline float fast_mag(Vec3_simd a) {
     return _mm_cvtss_f32(_mm_sqrt_ss(_mm_dp_ps(a.simd, a.simd, 0x71)));
 }
 
-// SIMD implementation of normalization
 inline Vec3_simd norm(Vec3_simd a) {
-    float length = mag(a);
-    if (length > 0.0f) {
-        __m128 inv_len = _mm_set1_ps(1.0f / length);
-        return _mm_mul_ps(a.simd, inv_len);
-    }
-    return a;
+    __m128 len_sq = _mm_dp_ps(a.simd, a.simd, 0x7F);
+    __m128 mask = _mm_cmpgt_ps(len_sq, _mm_setzero_ps()); // Check if len_sq > 0
+    __m128 len = _mm_sqrt_ps(len_sq);
+    __m128 inv_len = _mm_div_ps(_mm_set1_ps(1.0f), len);
+    inv_len = _mm_and_ps(inv_len, mask); // Set inv_len to 0 if len_sq was 0
+    return Vec3_simd(_mm_mul_ps(a.simd, inv_len));
 }
 
 // SIMD implementation of reflection
@@ -104,3 +105,48 @@ inline Vec3_simd zero() {
     return _mm_setzero_ps();
 }
 
+#include <immintrin.h>
+#include <xmmintrin.h>
+
+// SIMD saturate (single float)
+inline float saturate(float a) {
+    // Branchless SSE implementation
+    __m128 val = _mm_set_ss(a);
+    val = _mm_max_ss(val, _mm_setzero_ps());
+    val = _mm_min_ss(val, _mm_set_ss(1.0f));
+    return _mm_cvtss_f32(val);
+}
+
+// SIMD saturate (Vec3)
+inline Vec3_simd saturate(Vec3_simd a) {
+    const __m128 zero = _mm_setzero_ps();
+    const __m128 one = _mm_set1_ps(1.0f);
+    __m128 result = a.simd;
+    result = _mm_max_ps(result, zero);  // Clamp min 0
+    result = _mm_min_ps(result, one);   // Clamp max 1
+    return Vec3_simd(result);
+}
+
+// Random number generation (scalar remains same)
+inline float randf() {
+    return rand() / (RAND_MAX + 1.0f);
+}
+
+// SIMD random vector [-1, 1]
+inline Vec3_simd randf3() {
+    alignas(16) float vals[4];
+    for (int i = 0; i < 3; ++i) {
+        vals[i] = 2.0f * randf() - 1.0f;
+    }
+    vals[3] = 0.0f;  // unused component
+    return Vec3_simd(_mm_load_ps(vals));
+}
+
+// SIMD random point in unit sphere
+inline Vec3_simd rand_in_sphere() {
+    Vec3_simd value = randf3();
+    while (dot(value, value) > 1.0f) {  // Using squared length check
+        value = randf3();
+    }
+    return value;
+}

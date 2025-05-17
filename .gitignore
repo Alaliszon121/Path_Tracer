@@ -1,3 +1,17 @@
 /Path_Tracer/.vs/Path_Tracer/FileContentIndex
 /Path_Tracer/.vs/Path_Tracer/v17
 Path_Tracer/Path_Tracer.sln
+/Path_Tracer/.vs/Path_Tracer/v16
+Path_Tracer/Path_Tracer/Path_Tracer.vcxproj
+Path_Tracer/Path_Tracer/Path_Tracer.vcxproj.filters
+Path_Tracer/Path_Tracer/Path_Tracer.vcxproj
+*.obj
+*.tlog
+*.log
+*.recipe
+*.ilk
+/Path_Tracer/Path_Tracer/x64/Debug
+*.exe
+*.pdb
+*.vcxproj
+*.filters

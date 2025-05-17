@@ -9,7 +9,7 @@
 std::mutex console_mutex;
 
 // pliki z logika programu
-#include "customVector.h"
+// #include "customVector.h"
 #include "objects.h"
 #include "intersections.h"
 #include "render.h"

@@ -33,6 +33,7 @@ Vec3 cross(Vec3 a, Vec3 b)
 	return { a.y * b.z - a.z * b.y, a.x * b.z - a.z * b.x, a.x * b.y - a.y * b.x };
 }
 
+
 // dot product dwoch wektorow 3D
 float dot(Vec3 a, Vec3 b)
 {

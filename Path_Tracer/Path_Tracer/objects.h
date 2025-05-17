@@ -1,44 +1,41 @@
 #pragma once
-#include "customVector.h"
+#include "vec3_simd.h"  // Use SIMD-optimized Vec3
 
-struct Sphere // kula
-{
-	Vec3 pos;		// pozycja, srodek kuli
-	float radius;	// promien kuli
-
-	Vec3 color;
-	float roughness;	// szorstkosc (zakres od 0.0 do 0.9): 0.0 - g³adka (metaliczna), 0.9 - szorstka (rozmyta) -> NIE U¯YWAÆ 1.0
+// Sphere with SIMD-aligned members
+struct alignas(16) Sphere {
+    Vec3_simd pos;      // Center (16-byte aligned)
+    float radius;       // Sphere radius
+    Vec3_simd color;    // Color (16-byte aligned)
+    float roughness;    // 0.0 (smooth) to 0.9 (rough)
+    float _pad[2];      // Padding to maintain alignment (optional)
 };
 
-struct Plane // plaszczyzna
-{
-	Vec3 normal;	// normalna, prostopad³a do powierzchni
-	float distance;	// odleg³oœæ od punktu (0,0,0) do p³aszczyzny wzd³u¿ normalnej
-
-	Vec3 color;
-	float roughness;
+// Plane with SIMD-aligned members
+struct alignas(16) Plane {
+    Vec3_simd normal;   // Surface normal (16-byte aligned)
+    float distance;     // Distance from origin
+    Vec3_simd color;    // Color (16-byte aligned)
+    float roughness;    // 0.0 (smooth) to 0.9 (rough)
 };
 
-struct Ray // promien, polprosta
-{
-	Vec3 pos;	// pozycja, skad promien startuje
-	Vec3 dir;	// k9ierunek- gdzie leci, na co "patrzy"
+// Ray with SIMD-aligned members
+struct alignas(16) Ray {
+    Vec3_simd pos;      // Origin (16-byte aligned)
+    Vec3_simd dir;      // Direction (16-byte aligned)
+    float _pad[2];      // Padding for potential AVX (optional)
 };
 
-struct Hit // obiekt trafiony promieniem
-{
-	Vec3 pos;		// pozycja, miejsce w ktore promien trafil obiekt
-	float distance;	// odleg³oœæ wzd³u¿ promienia do pozycji trafienia, u¿ywana do porównywania dwóch intersekcji(przeciec), bo musimy wiedzieæ, które z nich jest bli¿ej
-	Vec3 normal;	// normalna trafionej powierzchni
-
-	Vec3 color;
-	float roughness;
+// Hit record with SIMD-aligned members
+struct alignas(16) Hit {
+    Vec3_simd pos;      // Intersection point (16-byte aligned)
+    float distance;     // Ray distance to hit
+    Vec3_simd normal;   // Surface normal (16-byte aligned)
+    Vec3_simd color;    // Color (16-byte aligned)
+    float roughness;    // 0.0 (smooth) to 0.9 (rough)
 };
 
-struct Scene // scena i obiekty znajdujace sie na niej
-{
-	Sphere s1;
-	Sphere s2;
-	Sphere s3;
-	Plane p1;
+// Scene containing SIMD-aligned objects
+struct alignas(16) Scene {
+    Sphere s1, s2, s3;  // 3 SIMD-optimized spheres
+    Plane p1;           // 1 SIMD-optimized plane
 };

@@ -18,7 +18,7 @@ kluczowe funkcjonalnosci i ich zalety:
 
 bool intersect(Ray ray, Sphere sphere, Hit& hit) //przeciêcie promienia z kul¹
 {
-	Vec3 c = sub(sphere.pos, ray.pos); // wektor od pozycji promienia do œrodka kuli
+	Vec3_simd c = sub(sphere.pos, ray.pos); // wektor od pozycji promienia do œrodka kuli
 	float d = mag(cross(ray.dir, c)); // odleg³oœæ pomiêdzy promieniem a œrodkiem kuli
 	float t1 = dot(ray.dir, c); // odleg³oœæ wzd³u¿ promienia do najbli¿szego punktu kuli
 
@@ -26,7 +26,7 @@ bool intersect(Ray ray, Sphere sphere, Hit& hit) //przeciêcie promienia z kul¹
 	// jeœli odleg³oœæ miêdzy œrodkiem kuli a promieniem jest mniejsza lub równa promieniowi, to mamy trafienie!
 	if (t1 > 0.0f && d <= sphere.radius)
 	{
-		float t2 = sqrt(sphere.radius * sphere.radius - d * d); // odleg³osc od punktu najblizszego do punktu przeciecia
+		float t2 = sqrtf(sphere.radius * sphere.radius - d * d); // odleg³osc od punktu najblizszego do punktu przeciecia
 
 		hit.distance = t1 - t2; // odleg³oœæ od promienia do punktu przeciêcia
 		hit.pos = add(ray.pos, mul(ray.dir, hit.distance)); // pozycja punktu przeciêcia

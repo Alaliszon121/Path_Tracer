@@ -28,7 +28,7 @@ void adjust(Ray& r)
 // symuluje rozpraszanie œwiat³a w zaleznosci od szorstkosci powierzchni
 void perturb(Ray& r, float degree)
 {
-	Vec3 v = mul(rand_in_sphere(), degree);
+	Vec3_simd v = mul(rand_in_sphere(), degree);
 	r.dir = norm(add(r.dir, v));
 }
 
@@ -43,22 +43,22 @@ Gdy promieñ trafia w obiekt:
 		szum: losowe zaburzenie odbicia, symuluj¹c szorstkoœæ powierzchni
 	3) mno¿y kolor obiektu przez wynik rekurencyjnego wywo³ania path_tracing dla promienia odbitego
 */
-Vec3 path_tracing(Ray ray, Scene& scene, uint32_t bounces)
+Vec3_simd path_tracing(Ray ray, Scene& scene, uint32_t bounces)
 {
 	// gdy promieñ niczego nie trafia funkcja zwraca gradient jako kolor t³a, 
 	// przechodz¹cy od bieli do b³êkitu w zale¿noœci od wysokoœci
 	Hit hit = {};
 	if (bounces == 0 || !intersect(ray, scene, hit))
 	{
-		Vec3 white = { 1.0f, 1.0f, 1.0f };
-		Vec3 blue = { 0.5f, 0.7f, 1.0f };
+		Vec3_simd white = { 1.0f, 1.0f, 1.0f };
+		Vec3_simd blue = { 0.5f, 0.7f, 1.0f };
 		float t = saturate(0.5f * (ray.dir.y + 1.0f));
 		return add(mul(white, t), mul(blue, 1.0f - t));
 	}
 
 	bounces--;
 
-	Vec3 reflected = reflect(ray.dir, hit.normal); // obliczenie odbicia
+	Vec3_simd reflected = reflect(ray.dir, hit.normal); // obliczenie odbicia
 
 	Ray ray_bounce;
 	ray_bounce.pos = hit.pos; // punkt poczatkowy = punkt trafienia
@@ -66,21 +66,21 @@ Vec3 path_tracing(Ray ray, Scene& scene, uint32_t bounces)
 	adjust(ray_bounce); // przesuniecie poczatku promienia
 	perturb(ray_bounce, hit.roughness); // losowe zaburzenie odbicia
 
-	Vec3 color = hit.color;
+	Vec3_simd color = hit.color;
 
 	return mul(color, path_tracing(ray_bounce, scene, bounces)); // mno¿y kolor obiektu (hit.color) przez wynik rekurencyjnego wywo³ania path_tracing dla promienia odbitego
 }
 
 // Renderuje kolor piksela
-Vec3 render(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t bounces, uint32_t samples, Scene& scene)
+Vec3_simd render(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t bounces, uint32_t samples, Scene& scene)
 {
 	// Kamera: 
-	Vec3 camera_pos = { 0.0f, 0.0f, -3.0f };
+	Vec3_simd camera_pos = { 0.0f, 0.0f, -3.0f };
 	float camera_near = 0.5f;	// odleg³oœæ od pozycji kamery do bliskiej p³aszczyzny kamery
 
 	// pozycja piksela znajduje siê na bliskiej p³aszczyŸnie kamery
 	float aspect_ratio = width / (float)height;
-	Vec3 pixel_pos = {
+	Vec3_simd pixel_pos = {
 		aspect_ratio * (float)x / (float)width - (aspect_ratio - 1.0f) * 0.5f - 0.5f,
 		(float)y / (float)height - 0.5f,
 		camera_pos.z + camera_near
@@ -89,12 +89,12 @@ Vec3 render(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t bo
 	float sub_x = aspect_ratio / width;
 	float sub_y = 1.0f / height;
 
-	Vec3 color = {};
+	Vec3_simd color = {};
 
 	// Podzia³ piksela na próbki- antyaliasing: generuje wiele promieni w losowych punktach w obrêbie piksela
 	for (uint32_t i = 0; i < samples; ++i)
 	{
-		Vec3 rand_pixel_pos = pixel_pos;
+		Vec3_simd rand_pixel_pos = pixel_pos;
 		rand_pixel_pos.x += randf() * sub_x - 0.5f * sub_x;
 		rand_pixel_pos.y += randf() * sub_y - 0.5f * sub_y;
 

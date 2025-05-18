@@ -104,10 +104,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <StructMemberAlignment>16Bytes</StructMemberAlignment>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -127,14 +132,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="customVector.cpp" />
     <ClCompile Include="gaussian_filter.cpp" />
     <ClCompile Include="intersections.cpp" />
     <ClCompile Include="Path_Tracer.cpp" />
     <ClCompile Include="render.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="customVector.h" />
     <ClInclude Include="gaussian_filter.h" />
     <ClInclude Include="intersections.h" />
     <ClInclude Include="objects.h" />

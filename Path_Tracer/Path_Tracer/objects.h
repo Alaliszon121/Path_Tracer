@@ -10,7 +10,7 @@ struct alignas(16) Sphere {
     float _pad[2];      // Padding to maintain alignment (optional)
 };
 
-// Plane with SIMD-aligned members
+// Plane with SIMD-aligned members.
 struct alignas(16) Plane {
     Vec3_simd normal;   // Surface normal (16-byte aligned)
     float distance;     // Distance from origin

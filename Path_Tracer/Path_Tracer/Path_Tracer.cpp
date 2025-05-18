@@ -14,6 +14,7 @@ std::mutex console_mutex;
 #include "intersections.h"
 #include "render.h"
 #include "gaussian_filter.h"
+#include "vec3_simd.h"
 
 // definicje zapobiegajace ostrzezeniom z zewnetrznej biblioteki do zapisywania wyrenderowanego obrazu do pliku
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -52,7 +53,7 @@ int main(int argc, const char* argv[])
 	if (quality == 2) quality = 100;
 	const uint32_t samples = 1000 / quality;
 	const uint32_t tile_size = 64;
-	const uint32_t batch_size = 4;
+	const uint32_t batch_size = 1;
 
 	// inne zmienne
 	const uint32_t stride = 3; // glebia obrazu -> 3 dla RGB 
@@ -77,6 +78,7 @@ int main(int argc, const char* argv[])
 	const uint32_t total_tiles = num_tiles_x * num_tiles_y;
 
 	std::vector<std::thread> jobs;
+	std::atomic<uint32_t> tiles_done(0);
 
 	// praca watkow
 	for (uint32_t t = 0; t < num_threads; ++t)
@@ -86,14 +88,11 @@ int main(int argc, const char* argv[])
 			{
 				uint32_t start_tile_index = next_tile.fetch_add(batch_size); // ustawienie poczatkowego fragmentu zeby watek wiedzial jaki zakres fragmentow pobrac
 				
-
 				if (start_tile_index >= total_tiles)
 					break;
 
 				uint32_t end_tile_index = std::min(start_tile_index + batch_size, total_tiles); // wyznaczenie ostatniego pobranego fragmentu przez watek
-				if (progress) {
-					printf("Renderowanie fragmentow od %i do %i na %i fragmentow...\n", start_tile_index, end_tile_index - 1, total_tiles);
-				}
+
 				// renderowanie po kolei kazdego fragmentu
 				for (uint32_t tile_index = start_tile_index; tile_index < end_tile_index; ++tile_index)
 				{
@@ -105,7 +104,7 @@ int main(int argc, const char* argv[])
 					{
 						for (uint32_t x = tile_x; x < tile_x + tile_size && x < width; ++x)
 						{
-							Vec3 color = render(x, y, width, height, bounces, samples, scene); // wyliczenie kolorow RGB piksela
+							Vec3_simd color = render(x, y, width, height, bounces, samples, scene); // wyliczenie kolorow RGB piksela
 							uint8_t* pixel = (uint8_t*)image + stride * (x + y * width);
 
 							// zapisanie do piksela kolorow RGB
@@ -114,9 +113,16 @@ int main(int argc, const char* argv[])
 							pixel[2] = static_cast<uint8_t>(saturate(color.z) * 255.0f);
 						}
 					}
+
+					uint32_t done = tiles_done.fetch_add(1) + 1;
+
+					float percent = (100.0f * done) / total_tiles;
+					printf("\rProgress: %.2f%% (%u / %u tiles)", percent, done, total_tiles);
+					fflush(stdout); // force flush for \r to work properly
+					
 				}
 			}
-			});
+		});
 	}
 
 	// dolaczanie watkow

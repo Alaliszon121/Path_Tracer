@@ -1,114 +1,90 @@
-#include "intersections.h"
+ï»¿#include "intersections.h"
 #include <math.h>
+#include <limits>
+#include <immintrin.h>
 
-/* 
-testowanie, czy promieñ przecina obiekty w scenie(sphere, plane), i dostarcza szczegó³owe informacje o punkcie przeciêcia
-okreœlaj¹, w co promieñ trafia na swojej drodze - w skrocie; wykrywa obiekty
+bool Sphere::intersect(const Ray& ray, Hit& hit) const {
+    // Vector from ray origin to sphere center
+    Vec3_simd c = sub(pos, ray.pos);
 
-kluczowe funkcjonalnosci i ich zalety:
-	- przetwarzanie wszystkich obiektów:
-		* funkcja iteruje po wszystkich obiektach w scenie (s1, s2, s3 dla kul, p1 dla p³aszczyzny)
-		* wywo³uje odpowiednie funkcje intersect dla ka¿dego z nich
-	- znajdowanie najbli¿szego przeciêcia:
-		* jeœli promieñ przecina obiekt (intersect zwraca true), sprawdzana jest odleg³oœæ do punktu przeciêcia (temp_hit.distance)
-		* tylko najbli¿sze przeciêcie jest zapisywane w strukturze hit
-	- rezultat:
-		* funkcja zwraca true, jeœli promieñ trafi³ w cokolwiek w scenie, lub false, jeœli nie by³o trafienia
-*/
+    // Calculate dot products using SIMD
+    float t1 = dot(ray.dir, c);
+    float c_sq = dot(c, c);
+    float radius_sq = radius * radius;
 
-bool intersect(Ray ray, Sphere sphere, Hit& hit) //przeciêcie promienia z kul¹
-{
-	Vec3_simd c = sub(sphere.pos, ray.pos); // wektor od pozycji promienia do œrodka kuli
-	float d = mag(cross(ray.dir, c)); // odleg³oœæ pomiêdzy promieniem a œrodkiem kuli
-	float t1 = dot(ray.dir, c); // odleg³oœæ wzd³u¿ promienia do najbli¿szego punktu kuli
+    // Early rejection tests using SIMD comparisons
+    __m128 cmp1 = _mm_cmplt_ss(_mm_set_ss(t1), _mm_setzero_ps());
+    __m128 cmp2 = _mm_cmpgt_ss(_mm_set_ss(c_sq - t1 * t1), _mm_set_ss(radius_sq));
 
-	// sprawdzenie, czy promieñ przecina kulê
-	// jeœli odleg³oœæ miêdzy œrodkiem kuli a promieniem jest mniejsza lub równa promieniowi, to mamy trafienie!
-	if (t1 > 0.0f && d <= sphere.radius)
-	{
-		float t2 = sqrtf(sphere.radius * sphere.radius - d * d); // odleg³osc od punktu najblizszego do punktu przeciecia
+    if (_mm_movemask_ps(_mm_or_ps(cmp1, cmp2)) & 1) {
+        return false;
+    }
 
-		hit.distance = t1 - t2; // odleg³oœæ od promienia do punktu przeciêcia
-		hit.pos = add(ray.pos, mul(ray.dir, hit.distance)); // pozycja punktu przeciêcia
-		hit.normal = norm(sub(hit.pos, sphere.pos)); // normalna w punkcie przeciêcia
-		hit.color = sphere.color; // kolor kuli
-		hit.roughness = sphere.roughness; // szorstkoœæ kuli
+    // Calculate intersection distance
+    float t2 = sqrt(radius_sq - (c_sq - t1 * t1));
+    hit.distance = t1 - t2;
 
-		// odwracanie normalnej, jesli jest skierowana w tym samym kierunku co promien
-		if (dot(ray.dir, hit.normal) > 0.0f)
-		{
-			hit.normal = mul(hit.normal, -1.0f);
-		}
+    // Calculate hit position
+    hit.pos = add(ray.pos, mul(ray.dir, hit.distance));
 
-		return true; // promieñ przecina kule
-	}
+    // Calculate normal (with backface check)
+    hit.normal = norm(sub(hit.pos, pos));
+    __m128 normal_dot = _mm_dp_ps(ray.dir.simd, hit.normal.simd, 0x71);
+    __m128 mask = _mm_cmpgt_ss(normal_dot, _mm_setzero_ps());
+    hit.normal.simd = _mm_xor_ps(hit.normal.simd,
+        _mm_and_ps(mask, _mm_set1_ps(-0.0f))); // Flip if needed
 
-	return false; // promieñ nie przecina kuli
+    hit.color = color;
+    hit.roughness = roughness;
+    return true;
 }
 
-bool intersect(Ray ray, Plane plane, Hit& hit) //przeciêcie promienia z plaszczyzna
-{
-	float denom = dot(ray.dir, plane.normal); // iloczyn skalarny: sprawdza nachylenie promienia wzglêdem p³aszczyzny
-	if (denom > 0.000001f) // jeœli denom jest bliskie zeru, oznacza to, ¿e promieñ jest równoleg³y do p³aszczyzny i nie ma przeciêcia
-	{
-		hit.distance = -(dot(ray.pos, plane.normal) + plane.distance) / denom; // odleg³oœæ do punktu przeciêcia
-		hit.pos = add(ray.pos, mul(ray.dir, hit.distance)); // pozycja punktu przeciêcia
-		hit.normal = plane.normal; // normalna p³aszczyzny
-		hit.color = plane.color; // kolor
-		hit.roughness = plane.roughness; // szorstkosc
+bool Plane::intersect(const Ray& ray, Hit& hit) const {
+    // Calculate denominator using SIMD dot product
+    float denom = dot(normal, ray.dir);
 
-		return true; // promieñ przecina plaszczyzne
-	}
+    // Early rejection with absolute value comparison
+    __m128 abs_denom = _mm_andnot_ps(_mm_set1_ps(-0.0f), _mm_set_ss(denom));
+    if (_mm_comile_ss(abs_denom, _mm_set_ss(1e-6f))) {
+        return false;
+    }
 
-	return false; // promieñ nie przecina plaszczyzny
+    // Calculate distance
+    float dist = -(dot(ray.pos, normal) + distance) / denom;
+
+    // Reject if behind ray
+    if (dist < 0.0f) {
+        return false;
+    }
+
+    hit.distance = dist;
+    hit.pos = add(ray.pos, mul(ray.dir, hit.distance));
+    hit.normal = normal;
+    hit.color = color;
+    hit.roughness = roughness;
+    return true;
 }
 
-bool intersect(Ray ray, Scene& scene, Hit& hit) // przeciêcie promienia z ca³¹ scen¹.
-{
-	Hit temp_hit = {};
-	float distance = 10000.0f; // pocz¹tkowo bardzo du¿a odleg³oœæ
-	bool is_hit = 0.0f;
+bool intersect(const Ray& ray, const Scene& scene, Hit& hit) {
+    Hit temp_hit;
+    float min_distance = std::numeric_limits<float>::max();
+    bool any_hit = false;
 
-	// test przeciêcia promienia z ka¿d¹ kul¹ i p³aszczyzn¹ w scenie
-	if (intersect(ray, scene.s1, temp_hit))
-	{
-		if (temp_hit.distance < distance)
-		{
-			hit = temp_hit;
-			distance = temp_hit.distance;
-			is_hit = true;
-		}
-	}
+    // Process shapes in chunks of 4 for better SIMD utilization (optional)
+    size_t i = 0;
+    const size_t count = scene.shapes.size();
 
-	if (intersect(ray, scene.s2, temp_hit))
-	{
-		if (temp_hit.distance < distance)
-		{
-			hit = temp_hit;
-			distance = temp_hit.distance;
-			is_hit = true;
-		}
-	}
+    for (; i < count; ++i) {
+        if (scene.shapes[i]->intersect(ray, temp_hit)) {
+            // Use SIMD comparison for distance check
+            __m128 cmp = _mm_cmplt_ss(_mm_set_ss(temp_hit.distance), _mm_set_ss(min_distance));
+                if (_mm_movemask_ps(cmp) & 1) {
+                    hit = temp_hit;
+                        min_distance = temp_hit.distance;
+                        any_hit = true;
+                }
+        }
+    }
 
-	if (intersect(ray, scene.s3, temp_hit))
-	{
-		if (temp_hit.distance < distance)
-		{
-			hit = temp_hit;
-			distance = temp_hit.distance;
-			is_hit = true;
-		}
-	}
-
-	if (intersect(ray, scene.p1, temp_hit))
-	{
-		if (temp_hit.distance < distance)
-		{
-			hit = temp_hit;
-			distance = temp_hit.distance;
-			is_hit = true;
-		}
-	}
-
-	return is_hit;
+    return any_hit;
 }

@@ -65,11 +65,27 @@ int main(int argc, const char* argv[])
 	memset(image, 0, image_size); // wypelnia zaalokowana pamiêc (wielkosci image_size) bloku wskazywanego przez image na 0  
 
 	// ustawienia sceny, dodanie obiektow na scene 3D
-	Scene scene = {};
-	scene.s1 = { {-2.0f, 0.0f, 0.0f}, 1.0f, {1.0f, 0.5f, 0.8f}, 0.04f };
-	scene.s2 = { {0.0f, 0.0f, 0.0f}, 1.0f, {0.6f, 0.9f, 0.6f}, 0.3f };
-	scene.s3 = { {2.0f, 0.0f, 0.0f}, 1.0f, {0.8f, 0.4f, 0.8f}, 0.9f };
-	scene.p1 = { {0.0f, 1.0f, 0.0f}, -1.0f, {0.8f, 0.8f, 0.8f}, 0.9f };
+	Scene scene;
+
+	// Add plane
+	scene.add_plane(
+		Vec3_simd(0.0f, 1.0f, 0.0f),    // normal (will be auto-normalized)
+		-1.0f,                          // distance
+		Vec3_simd(0.8f, 0.8f, 0.8f),    // color
+		0.9f                            // roughness
+	);
+
+	// Add spheres (converting Vec3 literals to Vec3_simd)
+	scene.add_sphere(
+		Vec3_simd(-2.0f, 0.0f, 0.0f),   // position
+		1.0f,                           // radius
+		Vec3_simd(1.0f, 0.5f, 0.8f),    // color
+		0.04f                           // roughness
+	);
+
+	scene.add_sphere(Vec3_simd(0.0f, 0.0f, 0.0f), 1.0f, Vec3_simd(0.6f, 0.9f, 0.6f), 0.3f);
+
+	scene.add_sphere(Vec3_simd(2.0f, 0.0f, 0.0f), 1.0f, Vec3_simd(0.8f, 0.4f, 0.8f), 0.9f);
 
 	// szerokosc i wysokosc fragmentow (kazdy watek dostaje pewna ilosc fragmentow obrazu do wyrenderowania)
 	std::atomic<uint32_t> next_tile(0);

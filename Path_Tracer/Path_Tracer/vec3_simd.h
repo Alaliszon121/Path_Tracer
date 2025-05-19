@@ -4,6 +4,8 @@
 #include <time.h>
 #include <stdlib.h>
 #include <immintrin.h> // For SIMD intrinsics
+#include <immintrin.h>
+#include <xmmintrin.h>
 
 // Modified Vec3 structure to align with SIMD requirements
 struct alignas(16) Vec3_simd {
@@ -95,8 +97,6 @@ inline Vec3_simd zero() {
     return _mm_setzero_ps();
 }
 
-#include <immintrin.h>
-#include <xmmintrin.h>
 
 // SIMD saturate (single float)
 inline float saturate(float a) {
@@ -105,6 +105,18 @@ inline float saturate(float a) {
     val = _mm_max_ss(val, _mm_setzero_ps());
     val = _mm_min_ss(val, _mm_set_ss(1.0f));
     return _mm_cvtss_f32(val);
+}
+
+// SIMD saturate for __m128 (clamps all 4 components to [0, 1])
+inline __m128 saturate__m128(__m128 val) {
+    const __m128 zero = _mm_setzero_ps();
+    const __m128 one = _mm_set1_ps(1.0f);
+
+    // Clamp components between 0 and 1
+    val = _mm_max_ps(val, zero);  // max(val, 0)
+    val = _mm_min_ps(val, one);   // min(val, 1)
+
+    return val;
 }
 
 // SIMD saturate (Vec3)
